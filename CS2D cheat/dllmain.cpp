@@ -1,40 +1,60 @@
-﻿
-#include <windows.h>
+﻿#include <windows.h>
 #include <iostream>
 
-class Player
+int uPlayerOffset = 0x4A58F8;
+
+struct Vector2D
+{
+	Vector2D(float y, float x) { this->y = y; this->x = x; };
+
+	float x = 0.0f, y = 0.0f;
+};
+
+class C_Weapon
 {
 public:
-	int& m_iClip2()
-	{
-		return *reinterpret_cast<int*>(this + 0x14);
-	}
+	char pad_0000[20]; //0x0000
+	int32_t m_iClip2; //0x0014
+	int32_t m_iClip1; //0x0018
+	char pad_001C[1000]; //0x001C
+}; //Size: 0x0404
 
-	int& m_iClip1()
-	{
-		return *reinterpret_cast<int*>(this + 0x18);
-	}
-};
+class C_Player
+{
+public:
+	char pad_0000[112]; //0x0000
+	float m_flGameTime; //0x0070
+	char pad_0074[352]; //0x0074
+	Vector2D m_vecOrigin; //0x01D4
+	char pad_01DC[112]; //0x01DC
+	C_Weapon* m_pWeapon; //0x024C
+	char pad_0250[3564]; //0x0250
+}; //Size: 0x103C
 
 DWORD Main(HINSTANCE HModule)
 {
-	//AllocConsole();
-	//SetConsoleTitleA("neir0cum");
-	//freopen_s(reinterpret_cast<FILE**> stdin, "CONIN$", "r", stdin);
-	//freopen_s(reinterpret_cast<FILE**> stdout, "CONOUT$", "w", stdout);
+	AllocConsole();
+	SetConsoleTitleA("neir0cum");
+	freopen_s(reinterpret_cast<FILE**> stdin, "CONIN$", "r", stdin);
+	freopen_s(reinterpret_cast<FILE**> stdout, "CONOUT$", "w", stdout);
+	auto pCS2D = (uintptr_t)GetModuleHandleA("CS2D.exe");
 
 	while (true)
 	{
-		auto pCS2D = (uintptr_t)GetModuleHandleA("CS2D.exe");
-		uintptr_t pPlayerUnk = *(uintptr_t*)(pCS2D + 0x4A58F8);
-		printf("pPlayerUnk: %x\n", pPlayerUnk);
-		Player* pPlayer = *reinterpret_cast<Player**>(pPlayerUnk + 0x24C);
-		printf("pPlayer: %p\n", (void**)pPlayer);
+		C_Player* pPlayer = *reinterpret_cast<C_Player**>(pCS2D + uPlayerOffset);
+		printf("pPlayerUnk: %x\n", pPlayer);
 
 		if (!pPlayer)
 			continue;
-		pPlayer->m_iClip1() = 9999;
-		pPlayer->m_iClip2() = 9999;
+
+		printf("X pos: %lf\tY pos: %lf", pPlayer->m_vecOrigin.x, pPlayer->m_vecOrigin.y);
+
+		auto pWeapon = pPlayer->m_pWeapon;
+		if (!pWeapon)
+			continue;
+
+		pWeapon->m_iClip1 = 9999;
+		pWeapon->m_iClip2 = 9999;
 	}
 
 	return 0;
